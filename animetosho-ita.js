@@ -1,11 +1,15 @@
-const AnimeToshoITA = {
-  search: function(query) {
-    const url = 'https://animetosho.org/api.json?q=' + encodeURIComponent(query);
-    return fetch(url)
-      .then(function(res) { return res.json(); })
-      .then(function(data) {
-        return data.filter(function(item) {
-          const t = item.title.toLowerCase();
+export default {
+  async search(query) {
+    try {
+      const url = `https://animetosho.org/api.json?q=${encodeURIComponent(query)}`;
+      const res = await fetch(url);
+      const data = await res.json();
+
+      if (!Array.isArray(data)) return []; // <- evita l'errore
+
+      return data
+        .filter(item => {
+          const t = (item.title || "").toLowerCase();
 
           const isIta =
             t.includes("[ita]") ||
@@ -26,15 +30,17 @@ const AnimeToshoITA = {
             t.includes("tntvillage");
 
           return isIta || italianGroups;
-        }).map(function(item) {
-          return {
-            title: item.title,
-            magnet: item.magnet,
-            size: item.size,
-            seeders: item.seeders ? item.seeders : 0,
-            leechers: item.leechers ? item.leechers : 0
-          };
-        });
-      });
+        })
+        .map(item => ({
+          title: item.title || "Untitled",
+          magnet: item.magnet || "",
+          size: item.size || "0",
+          seeders: item.seeders ?? 0,
+          leechers: item.leechers ?? 0
+        }));
+    } catch (e) {
+      console.error("Errore estensione ITA:", e);
+      return [];
+    }
   }
 };
